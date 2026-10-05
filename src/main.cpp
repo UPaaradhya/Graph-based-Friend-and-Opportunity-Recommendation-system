@@ -124,6 +124,7 @@ void displayFriends(vector<vector<int>>& graph, vector<User>& users) {
 
 //friend recommendations
 void friendRecommendation(vector<vector<int>>& graph, vector<User>& users) {
+
     int id;
 
     cout << "Enter User ID: ";
@@ -159,19 +160,59 @@ void friendRecommendation(vector<vector<int>>& graph, vector<User>& users) {
                 visited[neighbour] = true;
                 q.push(neighbour);
 
-                // Check if this person is a friend of the original user
+                // Check if already a direct friend
                 bool alreadyFriend = false;
 
                 for (int friendIndex : graph[start]) {
+
                     if (friendIndex == neighbour) {
                         alreadyFriend = true;
                         break;
                     }
                 }
 
-                // Recommend only people who are not already friends
+                // Do not recommend the user themselves
+                // or their direct friends
                 if (neighbour != start && !alreadyFriend) {
-                    cout << "- " << users[neighbour].name << endl;
+
+                    int score = 0;
+
+                    // Count mutual friends
+                    for (int friend1 : graph[start]) {
+
+                        for (int friend2 : graph[neighbour]) {
+
+                            if (friend1 == friend2) {
+                                score = score + 2;
+                            }
+                        }
+                    }
+
+                    // Count common skills
+                    for (string skill1 : users[start].skills) {
+
+                        for (string skill2 : users[neighbour].skills) {
+
+                            if (skill1 == skill2) {
+                                score = score + 1;
+                            }
+                        }
+                    }
+
+                    // Count common interests
+                    for (string interest1 : users[start].interests) {
+
+                        for (string interest2 : users[neighbour].interests) {
+
+                            if (interest1 == interest2) {
+                                score = score + 1;
+                            }
+                        }
+                    }
+
+                    cout << "- " << users[neighbour].name;
+                    cout << " | Recommendation Score: " << score << endl;
+
                     found = true;
                 }
             }
@@ -181,7 +222,7 @@ void friendRecommendation(vector<vector<int>>& graph, vector<User>& users) {
     if (!found) {
         cout << "No new friend recommendations available.\n";
     }
-}
+
 
 void dfs(vector<vector<int>>& graph, vector<User>& users, int current,
          vector<bool>& visited) {
@@ -379,7 +420,7 @@ int main() {
             break;
 
             case 7:
-            CommonSkillsAndInterests(users);
+            findCommonSkillsAndInterests(users);
             break;
 
         case 8:
