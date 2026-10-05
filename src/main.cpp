@@ -427,9 +427,7 @@ void recommendOpportunities(vector<User>& users,
         return;
     }
 
-    cout << "\n===== Recommended Opportunities =====\n";
-
-    bool found = false;
+    priority_queue<OpportunityRecommendation> recommendations;
 
     for (int i = 0; i < opportunities.size(); i++) {
 
@@ -451,20 +449,50 @@ void recommendOpportunities(vector<User>& users,
             }
         }
 
+        // Add only matching opportunities
         if (score > 0) {
 
-            cout << "\n" << opportunities[i].name;
-            cout << " | Type: " << opportunities[i].type;
-            cout << " | Score: " << score << endl;
+            OpportunityRecommendation recommendation;
 
-            found = true;
+            recommendation.opportunityIndex = i;
+            recommendation.score = score;
+
+            recommendations.push(recommendation);
         }
     }
 
-    if (!found) {
+    cout << "\n===== Ranked Opportunity Recommendations =====\n";
+
+    if (recommendations.empty()) {
         cout << "No matching opportunities found.\n";
+        return;
+    }
+
+    int rank = 1;
+
+    while (!recommendations.empty()) {
+
+        OpportunityRecommendation top = recommendations.top();
+        recommendations.pop();
+
+        cout << rank << ". "
+             << opportunities[top.opportunityIndex].name
+             << " | Type: "
+             << opportunities[top.opportunityIndex].type
+             << " | Score: "
+             << top.score << endl;
+
+        rank++;
     }
 }
+struct OpportunityRecommendation {
+    int opportunityIndex;
+    int score;
+
+    bool operator<(const OpportunityRecommendation& other) const {
+        return score < other.score;
+    }
+};
 int main() {
 
     vector<User> users;
@@ -503,7 +531,7 @@ for (int i = 0; i < numberOfOpportunities; i++) {
 
     opportunities.push_back(newOpportunity);
 }
-
+    
     int choice;
 
     do {
