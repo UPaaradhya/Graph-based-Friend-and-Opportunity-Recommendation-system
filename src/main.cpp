@@ -153,6 +153,44 @@ void friendRecommendation(vector<vector<int>>& graph, vector<User>& users) {
         cout << "No new friend recommendations available.\n";
     }
 }
+
+void dfs(vector<vector<int>>& graph, vector<User>& users, int current,
+         vector<bool>& visited) {
+
+    visited[current] = true;
+
+    cout << users[current].name << " ";
+
+    for (int neighbour : graph[current]) {
+
+        if (!visited[neighbour]) {
+            dfs(graph, users, neighbour, visited);
+        }
+    }
+}
+
+void dfsTraversal(vector<vector<int>>& graph, vector<User>& users) {
+
+    int id;
+
+    cout << "Enter User ID: ";
+    cin >> id;
+
+    int start = findUserIndex(users, id);
+
+    if (start == -1) {
+        cout << "User not found!\n";
+        return;
+    }
+
+    vector<bool> visited(users.size(), false);
+
+    cout << "\nDFS Network Traversal:\n";
+
+    dfs(graph, users, start, visited);
+
+    cout << endl;
+}
 int main() {
 
     vector<User> users;
@@ -182,7 +220,8 @@ int main() {
         cout << "2. Add Friendship\n";
         cout << "3. Display Friends\n";
         cout << "4. Friend Recommendation\n";
-        cout << "5. Exit\n";
+        cout << "5.DFS Network Traversal\n";
+        cout << "6. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -206,7 +245,11 @@ int main() {
             friendRecommendation(graph, users);
             break;
 
-        case 5:
+            case 5:
+            dfsTraversal(graph,users);
+            break;
+
+        case 6:
             cout << "Exiting program...\n";
             break;
 
@@ -214,7 +257,7 @@ int main() {
             cout << "Invalid choice!\n";
         }
 
-    } while (choice != 5);
+    } while (choice != 6);
 
     return 0;
 }
