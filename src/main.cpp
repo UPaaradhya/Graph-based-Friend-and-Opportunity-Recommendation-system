@@ -237,6 +237,61 @@ void findMutualFriends(vector<vector<int>>& graph, vector<User>& users) {
         cout << "User not found!\n";
         return;
     }
+    void findCommonSkillsAndInterests(vector<User>& users) {
+
+    int id1, id2;
+
+    cout << "Enter first User ID: ";
+    cin >> id1;
+
+    cout << "Enter second User ID: ";
+    cin >> id2;
+
+    int user1 = findUserIndex(users, id1);
+    int user2 = findUserIndex(users, id2);
+
+    if (user1 == -1 || user2 == -1) {
+        cout << "User not found!\n";
+        return;
+    }
+
+    bool commonSkill = false;
+    bool commonInterest = false;
+
+    cout << "\nCommon Skills:\n";
+
+    for (string skill1 : users[user1].skills) {
+
+        for (string skill2 : users[user2].skills) {
+
+            if (skill1 == skill2) {
+                cout << "- " << skill1 << endl;
+                commonSkill = true;
+            }
+        }
+    }
+
+    if (!commonSkill) {
+        cout << "No common skills.\n";
+    }
+
+    cout << "\nCommon Interests:\n";
+
+    for (string interest1 : users[user1].interests) {
+
+        for (string interest2 : users[user2].interests) {
+
+            if (interest1 == interest2) {
+                cout << "- " << interest1 << endl;
+                commonInterest = true;
+            }
+        }
+    }
+
+    if (!commonInterest) {
+        cout << "No common interests.\n";
+    }
+}
 
     bool found = false;
 
@@ -290,7 +345,8 @@ int main() {
         cout << "4. Friend Recommendation\n";
         cout << "5.DFS Network Traversal\n";
         cout << "6.Find Mutual Friends\n";
-        cout << "7. Exit\n";
+        cout << "7.Common Skills and Interests\n"; 
+        cout << "8. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -322,7 +378,11 @@ int main() {
             findMutualFriends(graph,users);
             break;
 
-        case 7:
+            case 7:
+            CommonSkillsAndInterests(users);
+            break;
+
+        case 8:
             cout << "Exiting program...\n";
             break;
 
@@ -330,7 +390,7 @@ int main() {
             cout << "Invalid choice!\n";
         }
 
-    } while (choice != 7);
+    } while (choice != 8);
 
     return 0;
 }
