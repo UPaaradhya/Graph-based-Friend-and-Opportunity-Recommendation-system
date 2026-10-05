@@ -66,6 +66,41 @@ void createProfile() {
 }
 };
 
+class Opportunity {
+public:
+    int id;
+    string name;
+    string type;
+    string skill;
+    string interest;
+
+    void createOpportunity() {
+
+        cout << "Enter Opportunity ID: ";
+        cin >> id;
+
+        cout << "Enter Opportunity Name: ";
+        cin >> name;
+
+        cout << "Enter Type (Project/Workshop/Course): ";
+        cin >> type;
+
+        cout << "Enter Required Skill: ";
+        cin >> skill;
+
+        cout << "Enter Interest Area: ";
+        cin >> interest;
+    }
+
+    void displayOpportunity() {
+
+        cout << "\nOpportunity ID: " << id;
+        cout << "\nName: " << name;
+        cout << "\nType: " << type;
+        cout << "\nRequired Skill: " << skill;
+        cout << "\nInterest: " << interest << endl;
+    }
+};
 // Find the index of a user using their ID
 int findUserIndex(vector<User>& users, int id) {
     for (int i = 0; i < users.size(); i++) {
@@ -376,9 +411,64 @@ struct Recommendation {
         return score < other.score;
     }
 };
+
+void recommendOpportunities(vector<User>& users,
+                            vector<Opportunity>& opportunities) {
+
+    int id;
+
+    cout << "Enter User ID: ";
+    cin >> id;
+
+    int userIndex = findUserIndex(users, id);
+
+    if (userIndex == -1) {
+        cout << "User not found!\n";
+        return;
+    }
+
+    cout << "\n===== Recommended Opportunities =====\n";
+
+    bool found = false;
+
+    for (int i = 0; i < opportunities.size(); i++) {
+
+        int score = 0;
+
+        // Check skills
+        for (string skill : users[userIndex].skills) {
+
+            if (skill == opportunities[i].skill) {
+                score = score + 2;
+            }
+        }
+
+        // Check interests
+        for (string interest : users[userIndex].interests) {
+
+            if (interest == opportunities[i].interest) {
+                score = score + 2;
+            }
+        }
+
+        if (score > 0) {
+
+            cout << "\n" << opportunities[i].name;
+            cout << " | Type: " << opportunities[i].type;
+            cout << " | Score: " << score << endl;
+
+            found = true;
+        }
+    }
+
+    if (!found) {
+        cout << "No matching opportunities found.\n";
+    }
+}
 int main() {
 
     vector<User> users;
+    vector<Opportunity> opportunities; 
     int numberOfUsers;
 
     cout << "Enter number of users: ";
@@ -396,6 +486,23 @@ int main() {
 
     // Create graph
     vector<vector<int>> graph(users.size());
+    // Create opportunities
+    int numberOfOpportunities;
+
+cout << "\nEnter number of opportunities: ";
+cin >> numberOfOpportunities;
+
+for (int i = 0; i < numberOfOpportunities; i++) {
+
+    Opportunity newOpportunity;
+
+    cout << "\nEnter details for Opportunity "
+         << i + 1 << ":\n";
+
+    newOpportunity.createOpportunity();
+
+    opportunities.push_back(newOpportunity);
+}
 
     int choice;
 
@@ -408,7 +515,8 @@ int main() {
         cout << "5.DFS Network Traversal\n";
         cout << "6.Find Mutual Friends\n";
         cout << "7.Common Skills and Interests\n"; 
-        cout << "8. Exit\n";
+        cout << "8.Recommend opportunities\n";
+        cout << "9. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -440,11 +548,14 @@ int main() {
             findMutualFriends(graph,users);
             break;
 
-            case 7:
+        case 7:
             findCommonSkillsAndInterests(users);
             break;
-
         case 8:
+            recommendOpportunities(users,opportunities);
+            break;
+
+        case 9:
             cout << "Exiting program...\n";
             break;
 
@@ -452,7 +563,7 @@ int main() {
             cout << "Invalid choice!\n";
         }
 
-    } while (choice != 8);
+    } while (choice != 9);
 
     return 0;
 }
