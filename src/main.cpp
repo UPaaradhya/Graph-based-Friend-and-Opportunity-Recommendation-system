@@ -143,10 +143,7 @@ void friendRecommendation(vector<vector<int>>& graph, vector<User>& users) {
     visited[start] = true;
     q.push(start);
 
-    cout << "\nFriend Recommendations for "
-         << users[start].name << ":\n";
-
-    bool found = false;
+    priority_queue<Recommendation> recommendations;
 
     while (!q.empty()) {
 
@@ -171,13 +168,11 @@ void friendRecommendation(vector<vector<int>>& graph, vector<User>& users) {
                     }
                 }
 
-                // Do not recommend the user themselves
-                // or their direct friends
                 if (neighbour != start && !alreadyFriend) {
 
                     int score = 0;
 
-                    // Count mutual friends
+                    // Mutual friends
                     for (int friend1 : graph[start]) {
 
                         for (int friend2 : graph[neighbour]) {
@@ -188,7 +183,7 @@ void friendRecommendation(vector<vector<int>>& graph, vector<User>& users) {
                         }
                     }
 
-                    // Count common skills
+                    // Common skills
                     for (string skill1 : users[start].skills) {
 
                         for (string skill2 : users[neighbour].skills) {
@@ -199,7 +194,7 @@ void friendRecommendation(vector<vector<int>>& graph, vector<User>& users) {
                         }
                     }
 
-                    // Count common interests
+                    // Common interests
                     for (string interest1 : users[start].interests) {
 
                         for (string interest2 : users[neighbour].interests) {
@@ -210,20 +205,38 @@ void friendRecommendation(vector<vector<int>>& graph, vector<User>& users) {
                         }
                     }
 
-                    cout << "- " << users[neighbour].name;
-                    cout << " | Recommendation Score: " << score << endl;
+                    Recommendation r;
+                    r.userIndex = neighbour;
+                    r.score = score;
 
-                    found = true;
+                    recommendations.push(r);
                 }
             }
         }
     }
 
-    if (!found) {
+    cout << "\n===== Ranked Friend Recommendations =====\n";
+
+    if (recommendations.empty()) {
         cout << "No new friend recommendations available.\n";
+        return;
     }
 
+    int rank = 1;
 
+    while (!recommendations.empty()) {
+
+        Recommendation top = recommendations.top();
+        recommendations.pop();
+
+        cout << rank << ". "
+             << users[top.userIndex].name
+             << " | Score: "
+             << top.score << endl;
+
+        rank++;
+    }
+}
 void dfs(vector<vector<int>>& graph, vector<User>& users, int current,
          vector<bool>& visited) {
 
@@ -355,6 +368,14 @@ void findMutualFriends(vector<vector<int>>& graph, vector<User>& users) {
         cout << "No mutual friends found.\n";
     }
 }
+struct Recommendation {
+    int userIndex;
+    int score;
+
+    bool operator<(const Recommendation& other) const {
+        return score < other.score;
+    }
+};
 int main() {
 
     vector<User> users;
