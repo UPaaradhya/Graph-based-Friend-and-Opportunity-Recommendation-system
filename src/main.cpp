@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include<unordered_map>
 using namespace std;
 
 class User {
@@ -65,7 +66,44 @@ void createProfile() {
     cout << endl;
 }
 };
+class Student : public User {
+public:
+    int semester;
 
+    void createStudent() {
+
+        createProfile();
+
+        cout << "Enter Semester: ";
+        cin >> semester;
+    }
+
+    void displayStudent() {
+
+        displayProfile();
+
+        cout << "Semester: " << semester << endl;
+    }
+};
+class Mentor : public User {
+public:
+    string expertise;
+
+    void createMentor() {
+
+        createProfile();
+
+        cout << "Enter Expertise: ";
+        cin >> expertise;
+    }
+
+    void displayMentor() {
+
+        displayProfile();
+
+        cout << "Expertise: " << expertise << endl;
+    }
+};
 class Opportunity {
 public:
     int id;
@@ -493,12 +531,14 @@ struct OpportunityRecommendation {
         return score < other.score;
     }
 };
-int main() {
+
+int main()
+{  
 
     vector<User> users;
     vector<Opportunity> opportunities; 
     int numberOfUsers;
-
+    
     cout << "Enter number of users: ";
     cin >> numberOfUsers;
 
@@ -511,6 +551,11 @@ int main() {
 
         users.push_back(newUser);
     }
+    unordered_map<int, int> userMap;
+
+for (int i = 0; i < users.size(); i++) {
+    userMap[users[i].id] = i;
+}
 
     // Create graph
     vector<vector<int>> graph(users.size());
