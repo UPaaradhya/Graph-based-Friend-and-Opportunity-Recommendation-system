@@ -8,33 +8,62 @@ public:
     int id;
     string name;
     string course;
-    string skills;
-    string interests;
+    vector<string> skills;
+    vector<string> interests
 
-    void createProfile() {
-        cout << "Enter User ID: ";
-        cin >> id;
+void createProfile() {
+    cout << "Enter User ID: ";
+    cin >> id;
 
-        cout << "Enter Name: ";
-        cin >> name;
+    cout << "Enter Name: ";
+    cin >> name;
 
-        cout << "Enter Course: ";
-        cin >> course;
+    cout << "Enter Course: ";
+    cin >> course;
 
-        cout << "Enter Skills: ";
-        cin >> skills;
+    int numberOfSkills;
+    cout << "Enter number of skills: ";
+    cin >> numberOfSkills;
 
-        cout << "Enter Interests: ";
-        cin >> interests;
+    for (int i = 0; i < numberOfSkills; i++) {
+        string skill;
+        cout << "Enter skill " << i + 1 << ": ";
+        cin >> skill;
+
+        skills.push_back(skill);
     }
 
-    void displayProfile() {
-        cout << "\nUser ID: " << id;
-        cout << "\nName: " << name;
-        cout << "\nCourse: " << course;
-        cout << "\nSkills: " << skills;
-        cout << "\nInterests: " << interests << endl;
+    int numberOfInterests;
+    cout << "Enter number of interests: ";
+    cin >> numberOfInterests;
+
+    for (int i = 0; i < numberOfInterests; i++) {
+        string interest;
+        cout << "Enter interest " << i + 1 << ": ";
+        cin >> interest;
+
+        interests.push_back(interest);
     }
+}
+
+  void displayProfile() {
+
+    cout << "\nUser ID: " << id;
+    cout << "\nName: " << name;
+    cout << "\nCourse: " << course;
+
+    cout << "\nSkills: ";
+    for (string skill : skills) {
+        cout << skill << " ";
+    }
+
+    cout << "\nInterests: ";
+    for (string interest : interests) {
+        cout << interest << " ";
+    }
+
+    cout << endl;
+}
 };
 
 // Find the index of a user using their ID
