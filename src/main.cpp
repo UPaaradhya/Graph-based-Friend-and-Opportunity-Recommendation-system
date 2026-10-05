@@ -191,6 +191,45 @@ void dfsTraversal(vector<vector<int>>& graph, vector<User>& users) {
 
     cout << endl;
 }
+void findMutualFriends(vector<vector<int>>& graph, vector<User>& users) {
+
+    int id1, id2;
+
+    cout << "Enter first User ID: ";
+    cin >> id1;
+
+    cout << "Enter second User ID: ";
+    cin >> id2;
+
+    int user1 = findUserIndex(users, id1);
+    int user2 = findUserIndex(users, id2);
+
+    if (user1 == -1 || user2 == -1) {
+        cout << "User not found!\n";
+        return;
+    }
+
+    bool found = false;
+
+    cout << "\nMutual Friends:\n";
+
+    // Check friends of first user
+    for (int friend1 : graph[user1]) {
+
+        // Check friends of second user
+        for (int friend2 : graph[user2]) {
+
+            if (friend1 == friend2) {
+                cout << "- " << users[friend1].name << endl;
+                found = true;
+            }
+        }
+    }
+
+    if (!found) {
+        cout << "No mutual friends found.\n";
+    }
+}
 int main() {
 
     vector<User> users;
@@ -221,7 +260,8 @@ int main() {
         cout << "3. Display Friends\n";
         cout << "4. Friend Recommendation\n";
         cout << "5.DFS Network Traversal\n";
-        cout << "6. Exit\n";
+        cout << "6.Find Mutual Friends\n";
+        cout << "7. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -245,11 +285,15 @@ int main() {
             friendRecommendation(graph, users);
             break;
 
-            case 5:
+        case 5:
             dfsTraversal(graph,users);
             break;
 
         case 6:
+            findMutualFriends(graph,users);
+            break;
+
+        case 7:
             cout << "Exiting program...\n";
             break;
 
@@ -257,7 +301,7 @@ int main() {
             cout << "Invalid choice!\n";
         }
 
-    } while (choice != 6);
+    } while (choice != 7);
 
     return 0;
 }
