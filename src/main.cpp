@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector>
 using namespace std;
 
 class User {
@@ -11,7 +12,7 @@ public:
     string interests;
 
     void createProfile() {
-        cout << "Enter User ID: ";
+        cout << "\nEnter User ID: ";
         cin >> id;
 
         cin.ignore();
@@ -42,15 +43,33 @@ public:
 
 int main() {
 
-    User user;
+    vector<User> users;
+
+    int numberOfUsers;
 
     cout << "====================================\n";
     cout << " Friend & Opportunity Recommendation\n";
-    cout << "====================================\n\n";
+    cout << "====================================\n";
 
-    user.createProfile();
+    cout << "\nHow many users do you want to create? ";
+    cin >> numberOfUsers;
 
-    user.displayProfile();
+    for (int i = 0; i < numberOfUsers; i++) {
+
+        User user;
+
+        cout << "\n--- Creating User " << i + 1 << " ---\n";
+
+        user.createProfile();
+
+        users.push_back(user);
+    }
+
+    cout << "\n\n========== ALL USERS ==========\n";
+
+    for (int i = 0; i < users.size(); i++) {
+        users[i].displayProfile();
+    }
 
     return 0;
 }
