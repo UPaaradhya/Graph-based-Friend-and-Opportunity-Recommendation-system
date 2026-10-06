@@ -256,7 +256,6 @@ void addFriendship(
     vector<User>& users,
     unordered_map<int, int>& userMap
 ) {
-
     int id1, id2;
 
     cout << "Enter first User ID: ";
@@ -266,23 +265,80 @@ void addFriendship(
     cin >> id2;
 
     int user1 = findUserIndexByHash(userMap, id1);
-
     int user2 = findUserIndexByHash(userMap, id2);
 
     if (user1 == -1 || user2 == -1) {
-
         cout << "User not found!\n";
-
         return;
     }
 
-    graph[user1].push_back(user2);
+    if (user1 == user2) {
+        cout << "A user cannot be friends with themselves!\n";
+        return;
+    }
 
+    for (int i = 0; i < graph[user1].size(); i++) {
+        if (graph[user1][i] == user2) {
+            cout << "Friendship already exists!\n";
+            return;
+        }
+    }
+
+    graph[user1].push_back(user2);
     graph[user2].push_back(user1);
 
     cout << "Friendship added successfully!\n";
 }
 
+void saveFriendshipsToFile(
+    vector<vector<int>>& graph,
+    vector<User>& users
+) {
+    ofstream file("friendships.txt");
+
+    for (int i = 0; i < graph.size(); i++) {
+        for (int j = 0; j < graph[i].size(); j++) {
+
+            // Save each friendship only once
+            if (users[i].id < users[graph[i][j]].id) {
+                file << users[i].id << " "
+                     << users[graph[i][j]].id << endl;
+            }
+        }
+    }
+
+    file.close();
+
+    cout << "Friendships saved successfully!" << endl;
+}
+void loadFriendshipsFromFile(
+    vector<vector<int>>& graph,
+    vector<User>& users,
+    unordered_map<int, int>& userMap
+) {
+    ifstream file("friendships.txt");
+
+    if (!file) {
+        return;
+    }
+
+    int id1, id2;
+
+    while (file >> id1 >> id2) {
+
+        int user1 = findUserIndexByHash(userMap, id1);
+        int user2 = findUserIndexByHash(userMap, id2);
+
+        if (user1 != -1 && user2 != -1) {
+            graph[user1].push_back(user2);
+            graph[user2].push_back(user1);
+        }
+    }
+
+    file.close();
+
+    cout << "Friendships loaded successfully!" << endl;
+}
 
 // ================= DISPLAY FRIENDS =================
 
@@ -306,11 +362,16 @@ void displayFriends(
         return;
     }
 
-    cout << "\nFriends of " << users[user].name << ":\n";
+   cout << "\nFriends of " << users[user].name << ":\n";
 
-    for (int friendIndex : graph[user]) {
+if (graph[user].empty()) {
+    cout << "This user has no friends yet.\n";
+    return;
+}
 
-        cout << "- " << users[friendIndex].name << endl;
+for (int friendIndex : graph[user]) {
+    cout << "- " << users[friendIndex].name << endl;
+
     }
 }
 
@@ -336,6 +397,12 @@ void friendRecommendation(
 
         return;
     }
+    if (graph[start].empty()) {
+
+    cout << "This user has no friends yet.\n";
+
+    return;
+}
 
     vector<bool> visited(users.size(), false);
 
@@ -505,11 +572,17 @@ void dfsTraversal(
 
     vector<bool> visited(users.size(), false);
 
-    cout << "\nDFS Network Traversal:\n";
+   cout << "\nDFS Network Traversal:\n";
 
-    dfs(graph, users, start, visited);
+if (graph[start].empty()) {
+    cout << users[start].name << " has no connections.\n";
+    return;
+}
 
-    cout << endl;
+dfs(graph, users, start, visited);
+
+cout << endl;
+    
 }
 
 
@@ -533,12 +606,19 @@ void findMutualFriends(
 
     int user2 = findUserIndexByHash(userMap, id2);
 
-    if (user1 == -1 || user2 == -1) {
+ if (user1 == -1 || user2 == -1) {
 
-        cout << "User not found!\n";
+    cout << "User not found!\n";
 
-        return;
-    }
+    return;
+}
+
+if (user1 == user2) {
+
+    cout << "Please enter two different users.\n";
+
+    return;
+}
 
     bool found = false;
 
@@ -589,6 +669,10 @@ void findCommonSkillsAndInterests(
 
         return;
     }
+    if (user1 == user2) {
+    cout << "Please enter two different users.\n";
+    return;
+}
 
     bool commonSkill = false;
 
@@ -642,7 +726,8 @@ void findCommonSkillsAndInterests(
 
 void recommendOpportunities(
     vector<User>& users,
-    vector<Opportunity>& opportunities
+    vector<Opportunity>& opportunities,
+           unordered_map<int, int>& userMap
 ) {
 
     int id;
@@ -650,7 +735,7 @@ void recommendOpportunities(
     cout << "Enter User ID: ";
     cin >> id;
 
-    int userIndex = findUserIndex(users, id);
+    int userIndex = findUserIndexByHash(userMap, id);
 
     if (userIndex == -1) {
 
@@ -813,38 +898,76 @@ void searchOpportunityInTree(
 // ================= SAVE USERS =================
 
 void saveUsersToFile(vector<User>& users) {
-
     ofstream file("users.txt");
 
     for (int i = 0; i < users.size(); i++) {
+        file << users[i].id << endl;
+        file << users[i].name << endl;
+        file << users[i].course << endl;
 
-        file << users[i].id << " ";
-
-        file << users[i].name << " ";
-
-        file << users[i].course << " ";
-
-
+        file << users[i].skills.size() << endl;
         for (int j = 0; j < users[i].skills.size(); j++) {
-
-            file << users[i].skills[j] << ",";
+            file << users[i].skills[j] << endl;
         }
 
-        file << " ";
-
-
+        file << users[i].interests.size() << endl;
         for (int j = 0; j < users[i].interests.size(); j++) {
-
-            file << users[i].interests[j] << ",";
+            file << users[i].interests[j] << endl;
         }
-
-        file << endl;
     }
 
     file.close();
 
-    cout << "\nUsers saved successfully!\n";
+    cout << "Users saved successfully!" << endl;
 }
+
+void loadUsersFromFile(vector<User>& users) {
+    ifstream file("users.txt");
+
+    if (!file) {
+        return;
+    }
+
+    User user;
+    int numberOfSkills;
+    int numberOfInterests;
+
+    while (file >> user.id) {
+        file.ignore();
+
+        getline(file, user.name);
+        getline(file, user.course);
+
+        file >> numberOfSkills;
+        file.ignore();
+
+        user.skills.clear();
+
+        for (int i = 0; i < numberOfSkills; i++) {
+            string skill;
+            getline(file, skill);
+            user.skills.push_back(skill);
+        }
+
+        file >> numberOfInterests;
+        file.ignore();
+
+        user.interests.clear();
+
+        for (int i = 0; i < numberOfInterests; i++) {
+            string interest;
+            getline(file, interest);
+            user.interests.push_back(interest);
+        }
+
+        users.push_back(user);
+    }
+
+    file.close();
+
+    cout << "Users loaded successfully!" << endl;
+}
+
 
 void saveOpportunitiesToFile(vector<Opportunity>& opportunities) {
     ofstream file("opportunities.txt");
@@ -861,14 +984,51 @@ void saveOpportunitiesToFile(vector<Opportunity>& opportunities) {
 
     cout << "Opportunities saved successfully!" << endl;
 }
+void loadOpportunitiesFromFile(vector<Opportunity>& opportunities) {
+    ifstream file("opportunities.txt");
+
+    if (!file) {
+        return;
+    }
+
+    Opportunity opportunity;
+
+    while (file >> opportunity.id) {
+        file.ignore();
+
+        getline(file, opportunity.name);
+        getline(file, opportunity.type);
+        getline(file, opportunity.skill);
+        getline(file, opportunity.interest);
+
+        opportunities.push_back(opportunity);
+    }
+
+    file.close();
+
+    cout << "Opportunities loaded successfully!" << endl;
+}
 
 // ================= MAIN =================
 
 int main() {
 
     vector<User> users;
+loadUsersFromFile(users);
+
+
+    unordered_map<int, int> userMap;
+
+for (int i = 0; i < users.size(); i++) {
+    userMap[users[i].id] = i;
+}
+vector<vector<int>> graph(users.size());
+loadFriendshipsFromFile(graph, users, userMap);
+
+
 
     vector<Opportunity> opportunities;
+loadOpportunitiesFromFile(opportunities);
 
 
     // Create opportunity tree
@@ -990,8 +1150,10 @@ int main() {
         cout << "11. Save Users\n";
 
         cout << "12. Save Opportunities\n";
+        
+        cout<< "13. Save Friendships \n";
 
-        cout << "13. Exit\n";
+        cout << "14. Exit\n";
 
         cout << "Enter your choice: ";
 
@@ -1079,7 +1241,7 @@ int main() {
 
             recommendOpportunities(
                 users,
-                opportunities
+                opportunities, userMap
             );
 
             break;
@@ -1125,8 +1287,11 @@ int main() {
 
             break;
 
-
         case 13:
+            saveFriendshipsToFile(graph, users);
+            break:
+
+        case 14:
 
             cout << "Exiting program...\n";
 
