@@ -2,6 +2,7 @@
 #include <vector>
 #include <queue>
 #include<unordered_map>
+#include<fstream>
 using namespace std;
 
 class User {
@@ -588,6 +589,33 @@ void searchOpportunityInTree(OpportunityNode* root, string name) {
         searchOpportunityInTree(root->children[i], name);
     }
 }
+void saveUsersToFile(vector<User>& users) {
+
+    ofstream file("users.txt");
+
+    for (int i = 0; i < users.size(); i++) {
+
+        file << users[i].id << " ";
+        file << users[i].name << " ";
+        file << users[i].course << " ";
+
+        for (int j = 0; j < users[i].skills.size(); j++) {
+            file << users[i].skills[j] << ",";
+        }
+
+        file << " ";
+
+        for (int j = 0; j < users[i].interests.size(); j++) {
+            file << users[i].interests[j] << ",";
+        }
+
+        file << endl;
+    }
+
+    file.close();
+
+    cout << "\nUsers saved successfully!\n";
+}
 int main()
 {  
 
@@ -657,7 +685,9 @@ addOpportunityToTree(opportunityTree, newOpportunity);
         cout << "7.Common Skills and Interests\n"; 
         cout << "8.Recommend opportunities\n";
         cout << "9.Display Opportunity Tree\n";
-        cout << "10. Exit\n";
+        cout<<"10.search opportunity\n";
+        cout <<"11.save users\n";
+        cout << "12. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -698,7 +728,7 @@ addOpportunityToTree(opportunityTree, newOpportunity);
         case 9:
             displayOpportunityTree(opportunityTree,0);
             break;
-            case 10:
+         case 10:
                 { string name;
                  cout << "Enter Opportunity Name: ";
                  cin>> name;
@@ -706,6 +736,9 @@ addOpportunityToTree(opportunityTree, newOpportunity);
                  break;
                 }
         case 11:
+            saveUsersToFile(users);
+            break;
+        case 12:
             cout << "Exiting program...\n";
             break;
 
@@ -713,7 +746,7 @@ addOpportunityToTree(opportunityTree, newOpportunity);
             cout << "Invalid choice!\n";
         }
 
-    } while (choice != 11);
+    } while (choice != 12);
 
     return 0;
 }
