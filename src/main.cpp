@@ -743,6 +743,13 @@ void recommendOpportunities(
 
         return;
     }
+    if (users[userIndex].skills.empty() &&
+    users[userIndex].interests.empty()) {
+
+    cout << "This user has no skills or interests added yet.\n";
+
+    return;
+}
 
     priority_queue<OpportunityRecommendation> recommendations;
 
@@ -846,32 +853,14 @@ void addOpportunityToTree(
             new OpportunityNode(opportunity.name)
         );
     }
-}
 
+    else {
 
-void displayOpportunityTree(
-    OpportunityNode* root,
-    int level
-) {
-
-    for (int i = 0; i < level; i++) {
-
-        cout << "  ";
-    }
-
-    cout << "|-- " << root->category << endl;
-
-    for (int i = 0; i < root->children.size(); i++) {
-
-        displayOpportunityTree(
-            root->children[i],
-            level + 1
-        );
+        cout << "Invalid opportunity type!\n";
     }
 }
 
-
-void searchOpportunityInTree(
+bool searchOpportunityInTree(
     OpportunityNode* root,
     string name
 ) {
@@ -882,19 +871,22 @@ void searchOpportunityInTree(
              << root->category
              << endl;
 
-        return;
+        return true;
     }
 
     for (int i = 0; i < root->children.size(); i++) {
 
-        searchOpportunityInTree(
-            root->children[i],
-            name
-        );
+        if (searchOpportunityInTree(
+                root->children[i],
+                name
+            )) {
+
+            return true;
+        }
     }
+
+    return false;
 }
-
-
 // ================= SAVE USERS =================
 
 void saveUsersToFile(vector<User>& users) {
@@ -1265,10 +1257,10 @@ loadOpportunitiesFromFile(opportunities);
 
             cin >> name;
 
-            searchOpportunityInTree(
-                opportunityTree,
-                name
-            );
+if (!searchOpportunityInTree(opportunityTree, name)) {
+
+    cout << "Opportunity not found.\n";
+}
 
             break;
         }
