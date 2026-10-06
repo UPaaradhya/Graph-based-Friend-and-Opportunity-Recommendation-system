@@ -149,9 +149,16 @@ int findUserIndex(vector<User>& users, int id) {
 
     return -1;
 }
+int findUserIndexByHash(unordered_map<int, int>& userMap, int id) {
+    if (userMap.find(id) != userMap.end()) {
+        return userMap[id];
+    }
 
+    return -1;
+}
 // Add friendship between two users
-void addFriendship(vector<vector<int>>& graph, vector<User>& users) {
+void addFriendship(vector<vector<int>>& graph, vector<User>& users,unordered_map<int, int>& userMap)
+{
     int id1, id2;
 
     cout << "Enter first User ID: ";
@@ -160,8 +167,8 @@ void addFriendship(vector<vector<int>>& graph, vector<User>& users) {
     cout << "Enter second User ID: ";
     cin >> id2;
 
-    int user1 = findUserIndex(users, id1);
-    int user2 = findUserIndex(users, id2);
+    int user1 = findUserIndexByHash(userMap, id1);
+    int user2 = findUserIndexByHash(userMap, id2);
 
     if (user1 == -1 || user2 == -1) {
         cout << "User not found!\n";
@@ -175,13 +182,13 @@ void addFriendship(vector<vector<int>>& graph, vector<User>& users) {
 }
 
 // Display direct friends
-void displayFriends(vector<vector<int>>& graph, vector<User>& users) {
+void displayFriends(vector<vector<int>>& graph, vector<User>& users,unordered_map<int, int>& userMap) {
     int id;
 
     cout << "Enter User ID: ";
     cin >> id;
 
-    int user = findUserIndex(users, id);
+    int user = findUserIndexByHash(userMap, id);
 
     if (user == -1) {
         cout << "User not found!\n";
@@ -196,14 +203,14 @@ void displayFriends(vector<vector<int>>& graph, vector<User>& users) {
 }
 
 //friend recommendations
-void friendRecommendation(vector<vector<int>>& graph, vector<User>& users) {
+void friendRecommendation(vector<vector<int>>& graph, vector<User>& users,unordered_map<int, int>& userMap) {
 
     int id;
 
     cout << "Enter User ID: ";
     cin >> id;
 
-    int start = findUserIndex(users, id);
+    int start = findUserIndexByHash(userMap, id);
 
     if (start == -1) {
         cout << "User not found!\n";
@@ -325,14 +332,14 @@ void dfs(vector<vector<int>>& graph, vector<User>& users, int current,
     }
 }
 
-void dfsTraversal(vector<vector<int>>& graph, vector<User>& users) {
+void dfsTraversal(vector<vector<int>>& graph, vector<User>& users,unordered_map<int,int>& userMap) {
 
     int id;
 
     cout << "Enter User ID: ";
     cin >> id;
 
-    int start = findUserIndex(users, id);
+    int start = findUserIndexByHash(userMap, id);
 
     if (start == -1) {
         cout << "User not found!\n";
@@ -347,7 +354,7 @@ void dfsTraversal(vector<vector<int>>& graph, vector<User>& users) {
 
     cout << endl;
 }
-void findMutualFriends(vector<vector<int>>& graph, vector<User>& users) {
+void findMutualFriends(vector<vector<int>>& graph, vector<User>& users,unordered_map<int,int>& userMap) {
 
     int id1, id2;
 
@@ -357,14 +364,14 @@ void findMutualFriends(vector<vector<int>>& graph, vector<User>& users) {
     cout << "Enter second User ID: ";
     cin >> id2;
 
-    int user1 = findUserIndex(users, id1);
-    int user2 = findUserIndex(users, id2);
+    int user1 = findUserIndexByHash(userMap, id1);
+    int user2 = findUserIndexByHash(userMap, id2);
 
     if (user1 == -1 || user2 == -1) {
         cout << "User not found!\n";
         return;
     }
-    void findCommonSkillsAndInterests(vector<User>& users) {
+    void findCommonSkillsAndInterests(vector<User>& users,unordered_map<int, int>& userMap) {
 
     int id1, id2;
 
@@ -374,8 +381,8 @@ void findMutualFriends(vector<vector<int>>& graph, vector<User>& users) {
     cout << "Enter second User ID: ";
     cin >> id2;
 
-    int user1 = findUserIndex(users, id1);
-    int user2 = findUserIndex(users, id2);
+    int user1 = findUserIndexByHash(userMap, id1);
+    int user2 = findUserIndexByHash(userMap, id2);
 
     if (user1 == -1 || user2 == -1) {
         cout << "User not found!\n";
@@ -531,12 +538,71 @@ struct OpportunityRecommendation {
         return score < other.score;
     }
 };
+class OpportunityNode {
+public:
+    string category;
+    vector<OpportunityNode*> children;
 
+    OpportunityNode(string name) {
+        category = name;
+    }
+};
+void addOpportunityToTree(OpportunityNode* root, Opportunity& opportunity) {
+
+    if (opportunity.type == "Project") {
+        root->children[0]->children.push_back(
+            new OpportunityNode(opportunity.name)
+        );
+    }
+    else if (opportunity.type == "Workshop") {
+        root->children[1]->children.push_back(
+            new OpportunityNode(opportunity.name)
+        );
+    }
+    else if (opportunity.type == "Course") {
+        root->children[2]->children.push_back(
+            new OpportunityNode(opportunity.name)
+        );
+    }
+}
+void displayOpportunityTree(OpportunityNode* root, int level) {
+
+    for (int i = 0; i < level; i++) {
+        cout << "  ";
+    }
+
+    cout << "|-- " << root->category << endl;
+
+    for (int i = 0; i < root->children.size(); i++) {
+        displayOpportunityTree(root->children[i], level + 1);
+    }
+}
+void searchOpportunityInTree(OpportunityNode* root, string name) {
+
+    if (root->category == name) {
+        cout << "\nOpportunity found: " << root->category << endl;
+        return;
+    }
+
+    for (int i = 0; i < root->children.size(); i++) {
+        searchOpportunityInTree(root->children[i], name);
+    }
+}
 int main()
 {  
 
     vector<User> users;
     vector<Opportunity> opportunities; 
+    OpportunityNode* opportunityTree = new OpportunityNode("Opportunities");
+
+OpportunityNode* projectNode = new OpportunityNode("Project");
+OpportunityNode* workshopNode = new OpportunityNode("Workshop");
+OpportunityNode* courseNode = new OpportunityNode("Course");
+
+opportunityTree->children.push_back(projectNode);
+opportunityTree->children.push_back(workshopNode);
+opportunityTree->children.push_back(courseNode);
+    
     int numberOfUsers;
     
     cout << "Enter number of users: ";
@@ -572,9 +638,10 @@ for (int i = 0; i < numberOfOpportunities; i++) {
     cout << "\nEnter details for Opportunity "
          << i + 1 << ":\n";
 
-    newOpportunity.createOpportunity();
+   newOpportunity.createOpportunity();
+opportunities.push_back(newOpportunity);
 
-    opportunities.push_back(newOpportunity);
+addOpportunityToTree(opportunityTree, newOpportunity);
 }
     
     int choice;
@@ -589,7 +656,8 @@ for (int i = 0; i < numberOfOpportunities; i++) {
         cout << "6.Find Mutual Friends\n";
         cout << "7.Common Skills and Interests\n"; 
         cout << "8.Recommend opportunities\n";
-        cout << "9. Exit\n";
+        cout << "9.Display Opportunity Tree\n";
+        cout << "10. Exit\n";
         cout << "Enter your choice: ";
         cin >> choice;
 
@@ -602,33 +670,42 @@ for (int i = 0; i < numberOfOpportunities; i++) {
             break;
 
         case 2:
-            addFriendship(graph, users);
+            addFriendship(graph, users,userMap);
             break;
 
         case 3:
-            displayFriends(graph, users);
+            displayFriends(graph, users,userMap);
             break;
 
         case 4:
-            friendRecommendation(graph, users);
+            friendRecommendation(graph, users,userMap);
             break;
 
         case 5:
-            dfsTraversal(graph,users);
+            dfsTraversal(graph,users,userMap);
             break;
 
         case 6:
-            findMutualFriends(graph,users);
+            findMutualFriends(graph,users,userMap);
             break;
 
         case 7:
-            findCommonSkillsAndInterests(users);
+            findCommonSkillsAndInterests(users,userMap);
             break;
         case 8:
             recommendOpportunities(users,opportunities);
             break;
-
         case 9:
+            displayOpportunityTree(opportunityTree,0);
+            break;
+            case 10:
+                { string name;
+                 cout << "Enter Opportunity Name: ";
+                 cin>> name;
+                 searchOpportunityInTree(opportunityTree,name);
+                 break;
+                }
+        case 11:
             cout << "Exiting program...\n";
             break;
 
@@ -636,7 +713,7 @@ for (int i = 0; i < numberOfOpportunities; i++) {
             cout << "Invalid choice!\n";
         }
 
-    } while (choice != 9);
+    } while (choice != 11);
 
     return 0;
 }
