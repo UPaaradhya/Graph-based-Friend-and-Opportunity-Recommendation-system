@@ -3,6 +3,7 @@
 #include <queue>
 #include <unordered_map>
 #include <fstream>
+#include <cctype>
 
 using namespace std;
 
@@ -17,10 +18,14 @@ public:
     vector<string> skills;
     vector<string> interests;
 
-    void createProfile() {
+    void createProfile(int assignedId = -1) {
 
-        cout << "Enter User ID: ";
-        cin >> id;
+        if (assignedId == -1) {
+            cout << "Enter User ID: ";
+            cin >> id;
+        } else {
+            id = assignedId;
+        }
 
         cout << "Enter Name: ";
         cin >> name;
@@ -516,10 +521,19 @@ void friendRecommendation(
 
         recommendations.pop();
 
+        int maxScore = (2 * graph[start].size())
+                     + users[start].skills.size()
+                     + users[start].interests.size();
+
+        int percentage = 0;
+        if (maxScore > 0) {
+            percentage = (top.score * 100) / maxScore;
+        }
+
         cout << rank << ". "
              << users[top.userIndex].name
-             << " | Score: "
-             << top.score
+             << " | Match: "
+             << percentage << "%"
              << endl;
 
         rank++;
@@ -813,12 +827,14 @@ void recommendOpportunities(
 
         recommendations.pop();
 
+        int percentage = (top.score * 100) / 4;
+
         cout << rank << ". "
              << opportunities[top.opportunityIndex].name
              << " | Type: "
              << opportunities[top.opportunityIndex].type
-             << " | Score: "
-             << top.score
+             << " | Match: "
+             << percentage << "%"
              << endl;
 
         rank++;
@@ -833,21 +849,24 @@ void addOpportunityToTree(
     Opportunity& opportunity
 ) {
 
-    if (opportunity.type == "Project") {
+    string type = opportunity.type;
+    for (char &c : type) c = tolower(c);
+
+    if (type == "project") {
 
         root->children[0]->children.push_back(
             new OpportunityNode(opportunity.name)
         );
     }
 
-    else if (opportunity.type == "Workshop") {
+    else if (type == "workshop") {
 
         root->children[1]->children.push_back(
             new OpportunityNode(opportunity.name)
         );
     }
 
-    else if (opportunity.type == "Course") {
+    else if (type == "course") {
 
         root->children[2]->children.push_back(
             new OpportunityNode(opportunity.name)
@@ -889,24 +908,15 @@ bool searchOpportunityInTree(
 }
 // ================= DISPLAY OPPORTUNITY TREE =================
 
-void displayOpportunityTree(
-    OpportunityNode* root,
-    int level
-) {
-
+void displayOpportunityTree(OpportunityNode* root, int level) {
     for (int i = 0; i < level; i++) {
-
         cout << "  ";
     }
 
     cout << "|-- " << root->category << endl;
 
     for (int i = 0; i < root->children.size(); i++) {
-
-        displayOpportunityTree(
-            root->children[i],
-            level + 1
-        );
+        displayOpportunityTree(root->children[i], level + 1);
     }
 }
 
@@ -1009,13 +1019,12 @@ void loadOpportunitiesFromFile(vector<Opportunity>& opportunities) {
 
     Opportunity opportunity;
 
-    while (file >> opportunity.id) {
-        file.ignore();
-
-        getline(file, opportunity.name);
-        getline(file, opportunity.type);
-        getline(file, opportunity.skill);
-        getline(file, opportunity.interest);
+    // Opportunity data is saved in one line per opportunity.
+    while (file >> opportunity.id
+                >> opportunity.name
+                >> opportunity.type
+                >> opportunity.skill
+                >> opportunity.interest) {
 
         opportunities.push_back(opportunity);
     }
@@ -1025,6 +1034,354 @@ void loadOpportunitiesFromFile(vector<Opportunity>& opportunities) {
     cout << "Opportunities loaded successfully!" << endl;
 }
 
+// ================= PASSWORD FILE =================
+
+void savePasswordsToFile(unordered_map<int, string>& passwords) {
+    ofstream file("passwords.txt");
+
+    for (auto entry : passwords) {
+        file << entry.first << " " << entry.second << endl;
+    }
+
+    file.close();
+}
+
+void loadPasswordsFromFile(unordered_map<int, string>& passwords) {
+    ifstream file("passwords.txt");
+
+    if (!file) {
+        return;
+    }
+
+    int id;
+    string password;
+
+    while (file >> id >> password) {
+        passwords[id] = password;
+    }
+
+    file.close();
+}
+
+// ================= LOGIN =================
+
+int loginUser(
+    vector<User>& users,
+    unordered_map<int, int>& userMap,
+    unordered_map<int, string>& passwords
+) {
+    int id;
+    string password;
+
+    cout << "\nEnter User ID to login: ";
+    cin >> id;
+
+    int userIndex = findUserIndexByHash(userMap, id);
+
+    if (userIndex == -1) {
+        cout << "User not found!\n";
+        return -1;
+    }
+
+    // Existing accounts created before password support can set a password
+    // the first time they log in.
+    if (passwords.find(id) == passwords.end()) {
+        cout << "No password is set for this account.\n";
+        cout << "Create a password: ";
+        cin >> password;
+        passwords[id] = password;
+        savePasswordsToFile(passwords);
+        cout << "Password created successfully!\n";
+        cout << "Login successful!\n";
+        return userIndex;
+    }
+
+    cout << "Enter Password: ";
+    cin >> password;
+
+    if (password != passwords[id]) {
+        cout << "Incorrect password!\n";
+        return -1;
+    }
+
+    cout << "\nLogin successful!\n";
+    return userIndex;
+}
+
+
+// ================= USER DASHBOARD =================
+
+void displayDashboard(
+    int userIndex,
+    vector<User>& users,
+    vector<vector<int>>& graph
+) {
+    cout << "\n========================================\n";
+    cout << "           USER DASHBOARD\n";
+    cout << "========================================\n";
+
+    cout << "\nWelcome, " << users[userIndex].name << "!\n";
+    cout << "User ID: " << users[userIndex].id << endl;
+    cout << "Course: " << users[userIndex].course << endl;
+
+    cout << "\nYour Skills: ";
+    if (users[userIndex].skills.empty()) {
+        cout << "None";
+    }
+    else {
+        for (string skill : users[userIndex].skills) {
+            cout << skill << " ";
+        }
+    }
+
+    cout << "\nYour Interests: ";
+    if (users[userIndex].interests.empty()) {
+        cout << "None";
+    }
+    else {
+        for (string interest : users[userIndex].interests) {
+            cout << interest << " ";
+        }
+    }
+
+    cout << "\n\nYour Friends: ";
+
+    if (graph[userIndex].empty()) {
+        cout << "None";
+    }
+    else {
+        cout << "\n";
+        for (int friendIndex : graph[userIndex]) {
+            cout << "- " << users[friendIndex].name
+                 << " (ID: " << users[friendIndex].id << ")\n";
+        }
+    }
+
+    cout << "\n========================================\n";
+}
+
+
+// ================= ADD RECOMMENDED FRIEND =================
+
+void recommendAndAddFriend(
+    int userIndex,
+    vector<User>& users,
+    vector<vector<int>>& graph
+) {
+    priority_queue<Recommendation> recommendations;
+
+    for (int candidate = 0; candidate < users.size(); candidate++) {
+
+        if (candidate == userIndex) {
+            continue;
+        }
+
+        bool alreadyFriend = false;
+
+        for (int friendIndex : graph[userIndex]) {
+            if (friendIndex == candidate) {
+                alreadyFriend = true;
+                break;
+            }
+        }
+
+        if (alreadyFriend) {
+            continue;
+        }
+
+        int score = 0;
+
+        // Mutual friends
+        for (int friend1 : graph[userIndex]) {
+            for (int friend2 : graph[candidate]) {
+                if (friend1 == friend2) {
+                    score = score + 2;
+                }
+            }
+        }
+
+        // Common skills
+        for (string skill1 : users[userIndex].skills) {
+            for (string skill2 : users[candidate].skills) {
+                if (skill1 == skill2) {
+                    score = score + 1;
+                }
+            }
+        }
+
+        // Common interests
+        for (string interest1 : users[userIndex].interests) {
+            for (string interest2 : users[candidate].interests) {
+                if (interest1 == interest2) {
+                    score = score + 1;
+                }
+            }
+        }
+
+        if (score > 0) {
+            Recommendation recommendation;
+            recommendation.userIndex = candidate;
+            recommendation.score = score;
+            recommendations.push(recommendation);
+        }
+    }
+
+    cout << "\n===== FRIEND RECOMMENDATIONS =====\n";
+
+    if (recommendations.empty()) {
+        cout << "No suitable new friends found.\n";
+        return;
+    }
+
+    vector<int> recommendedUsers;
+    int rank = 1;
+
+    while (!recommendations.empty()) {
+        Recommendation top = recommendations.top();
+        recommendations.pop();
+
+        recommendedUsers.push_back(top.userIndex);
+
+        int maxScore = (2 * graph[userIndex].size())
+                     + users[userIndex].skills.size()
+                     + users[userIndex].interests.size();
+
+        int percentage = 0;
+        if (maxScore > 0) {
+            percentage = (top.score * 100) / maxScore;
+        }
+
+        cout << rank << ". "
+             << users[top.userIndex].name
+             << " (ID: " << users[top.userIndex].id << ")"
+             << " | Match: " << percentage << "%" << endl;
+
+        rank++;
+    }
+
+    int choice;
+
+    cout << "\nEnter recommendation number to add as friend (0 to cancel): ";
+    cin >> choice;
+
+    if (choice == 0) {
+        cout << "No friend added.\n";
+        return;
+    }
+
+    if (choice < 1 || choice > recommendedUsers.size()) {
+        cout << "Invalid recommendation number.\n";
+        return;
+    }
+
+    int selectedUser = recommendedUsers[choice - 1];
+
+    graph[userIndex].push_back(selectedUser);
+    graph[selectedUser].push_back(userIndex);
+
+    cout << "Friendship added successfully with "
+         << users[selectedUser].name << "!\n";
+
+    // Save the new friendship immediately.
+    saveFriendshipsToFile(graph, users);
+}
+
+
+// ================= ADD RECOMMENDED OPPORTUNITY =================
+
+void recommendAndChooseOpportunity(
+    int userIndex,
+    vector<User>& users,
+    vector<Opportunity>& opportunities
+) {
+    priority_queue<OpportunityRecommendation> recommendations;
+
+    for (int i = 0; i < opportunities.size(); i++) {
+        int score = 0;
+
+        for (string skill : users[userIndex].skills) {
+            if (skill == opportunities[i].skill) {
+                score = score + 2;
+            }
+        }
+
+        for (string interest : users[userIndex].interests) {
+            if (interest == opportunities[i].interest) {
+                score = score + 2;
+            }
+        }
+
+        if (score > 0) {
+            OpportunityRecommendation recommendation;
+            recommendation.opportunityIndex = i;
+            recommendation.score = score;
+            recommendations.push(recommendation);
+        }
+    }
+
+    cout << "\n===== OPPORTUNITY RECOMMENDATIONS =====\n";
+
+    if (recommendations.empty()) {
+        cout << "No suitable opportunities found.\n";
+        return;
+    }
+
+    vector<int> recommendedOpportunities;
+    int rank = 1;
+
+    while (!recommendations.empty()) {
+        OpportunityRecommendation top = recommendations.top();
+        recommendations.pop();
+
+        recommendedOpportunities.push_back(top.opportunityIndex);
+
+        int percentage = (top.score * 100) / 4;
+
+        cout << rank << ". "
+             << opportunities[top.opportunityIndex].name
+             << " | Type: " << opportunities[top.opportunityIndex].type
+             << " | Match: " << percentage << "%" << endl;
+
+        rank++;
+    }
+
+    int choice;
+
+    cout << "\nEnter recommendation number to choose (0 to cancel): ";
+    cin >> choice;
+
+    if (choice == 0) {
+        cout << "No opportunity selected.\n";
+        return;
+    }
+
+    if (choice < 1 || choice > recommendedOpportunities.size()) {
+        cout << "Invalid recommendation number.\n";
+        return;
+    }
+
+    int selectedOpportunity = recommendedOpportunities[choice - 1];
+
+    cout << "\nYou selected: "
+         << opportunities[selectedOpportunity].name << endl;
+    opportunities[selectedOpportunity].displayOpportunity();
+}
+
+
+// ================= AUTO USER ID =================
+
+int generateNextUserId(vector<User>& users) {
+    int nextId = 1;
+
+    for (int i = 0; i < users.size(); i++) {
+        if (users[i].id >= nextId) {
+            nextId = users[i].id + 1;
+        }
+    }
+
+    return nextId;
+}
+
 // ================= MAIN =================
 
 int main() {
@@ -1032,49 +1389,54 @@ int main() {
     vector<User> users;
     loadUsersFromFile(users);
 
-    // ================= CREATE USERS =================
+    unordered_map<int, string> passwords;
+    loadPasswordsFromFile(passwords);
 
-    int numberOfUsers;
+    // If no saved users exist, create users first.
+    if (users.empty()) {
+        int numberOfUsers;
 
-    cout << "Enter number of new users: ";
-    cin >> numberOfUsers;
+        cout << "No users found. Create users first.\n";
+        cout << "Enter number of users: ";
+        cin >> numberOfUsers;
 
-    for (int i = 0; i < numberOfUsers; i++) {
+        for (int i = 0; i < numberOfUsers; i++) {
+            User newUser;
 
-        User newUser;
+            cout << "\nEnter details for User " << i + 1 << ":\n";
+            int newId = generateNextUserId(users);
+            newUser.createProfile(newId);
 
-        cout << "\nEnter details for User "
-             << i + 1
-             << ":\n";
+            cout << "Your User ID is: " << newId << endl;
+            cout << "Please remember this User ID for login.\n";
 
-        newUser.createProfile();
+            string newPassword;
+            cout << "Create a password: ";
+            cin >> newPassword;
+            passwords[newId] = newPassword;
 
-        users.push_back(newUser);
+            users.push_back(newUser);
+        }
+        saveUsersToFile(users);
+        savePasswordsToFile(passwords);
     }
 
-    // ================= HASH MAP =================
-
+    // Build hash map after all users are loaded/created.
     unordered_map<int, int> userMap;
 
     for (int i = 0; i < users.size(); i++) {
-
         userMap[users[i].id] = i;
     }
 
-    // ================= GRAPH =================
-
+    // Build friendship graph and load saved friendships.
     vector<vector<int>> graph(users.size());
-
-    // Load old friendships after users and userMap are ready
     loadFriendshipsFromFile(graph, users, userMap);
 
-    // ================= LOAD OPPORTUNITIES =================
-
+    // Load opportunities.
     vector<Opportunity> opportunities;
     loadOpportunitiesFromFile(opportunities);
 
-    // ================= CREATE OPPORTUNITY TREE =================
-
+    // Create opportunity tree.
     OpportunityNode* opportunityTree =
         new OpportunityNode("Opportunities");
 
@@ -1091,221 +1453,200 @@ int main() {
     opportunityTree->children.push_back(workshopNode);
     opportunityTree->children.push_back(courseNode);
 
-    // Add already saved opportunities to the tree
+    // Add saved opportunities to the tree.
     for (int i = 0; i < opportunities.size(); i++) {
-
-        addOpportunityToTree(
-            opportunityTree,
-            opportunities[i]
-        );
+        addOpportunityToTree(opportunityTree, opportunities[i]);
     }
 
-    // ================= CREATE NEW OPPORTUNITIES =================
+    // If no opportunities exist, create them first.
+    if (opportunities.empty()) {
+        int numberOfOpportunities;
 
-    int numberOfOpportunities;
+        cout << "\nNo opportunities found. Create opportunities first.\n";
+        cout << "Enter number of opportunities: ";
+        cin >> numberOfOpportunities;
 
-    cout << "\nEnter number of new opportunities: ";
-    cin >> numberOfOpportunities;
+        for (int i = 0; i < numberOfOpportunities; i++) {
+            Opportunity newOpportunity;
 
-    for (int i = 0; i < numberOfOpportunities; i++) {
+            cout << "\nEnter details for Opportunity " << i + 1 << ":\n";
+            newOpportunity.createOpportunity();
 
-        Opportunity newOpportunity;
-
-        cout << "\nEnter details for Opportunity "
-             << i + 1
-             << ":\n";
-
-        newOpportunity.createOpportunity();
-
-        opportunities.push_back(newOpportunity);
-
-        addOpportunityToTree(
-            opportunityTree,
-            newOpportunity
-        );
+            opportunities.push_back(newOpportunity);
+            addOpportunityToTree(opportunityTree, newOpportunity);
+        }
     }
 
-    // ================= MENU =================
+    // ================= LOGIN SYSTEM =================
 
     int choice;
 
     do {
-
-        cout << "\n========== MENU ==========\n";
-
-        cout << "1. Display All Users\n";
-        cout << "2. Add Friendship\n";
-        cout << "3. Display Friends\n";
-        cout << "4. Friend Recommendation\n";
-        cout << "5. DFS Network Traversal\n";
-        cout << "6. Find Mutual Friends\n";
-        cout << "7. Common Skills and Interests\n";
-        cout << "8. Recommend Opportunities\n";
-        cout << "9. Display Opportunity Tree\n";
-        cout << "10. Search Opportunity\n";
-        cout << "11. Save Users\n";
-        cout << "12. Save Opportunities\n";
-        cout << "13. Save Friendships\n";
-        cout << "14. Exit\n";
-
+        cout << "\n========== FRIEND AND OPPORTUNITY SYSTEM ==========" << endl;
+        cout << "1. Login" << endl;
+        cout << "2. Create Account" << endl;
+        cout << "3. Display All Users" << endl;
+        cout << "4. Add New Opportunity" << endl;
+        cout << "5. Save Users" << endl;
+        cout << "6. Save Opportunities" << endl;
+        cout << "7. Save Friendships" << endl;
+        cout << "8. Exit" << endl;
         cout << "Enter your choice: ";
         cin >> choice;
 
         switch (choice) {
 
         case 1:
-
-            for (int i = 0; i < users.size(); i++) {
-
-                users[i].displayProfile();
-            }
-
-            break;
-
-
-        case 2:
-
-            addFriendship(
-                graph,
-                users,
-                userMap
-            );
-
-            break;
-
-
-        case 3:
-
-            displayFriends(
-                graph,
-                users,
-                userMap
-            );
-
-            break;
-
-
-        case 4:
-
-            friendRecommendation(
-                graph,
-                users,
-                userMap
-            );
-
-            break;
-
-
-        case 5:
-
-            dfsTraversal(
-                graph,
-                users,
-                userMap
-            );
-
-            break;
-
-
-        case 6:
-
-            findMutualFriends(
-                graph,
-                users,
-                userMap
-            );
-
-            break;
-
-
-        case 7:
-
-            findCommonSkillsAndInterests(
-                users,
-                userMap
-            );
-
-            break;
-
-
-        case 8:
-
-            recommendOpportunities(
-                users,
-                opportunities,
-                userMap
-            );
-
-            break;
-
-
-        case 9:
-
-            displayOpportunityTree(
-                opportunityTree,
-                0
-            );
-
-            break;
-
-
-        case 10:
         {
-            string name;
+            int userIndex = loginUser(users, userMap, passwords);
 
-            cout << "Enter Opportunity Name: ";
-            cin >> name;
-
-            if (!searchOpportunityInTree(
-                    opportunityTree,
-                    name
-                )) {
-
-                cout << "Opportunity not found.\n";
+            if (userIndex == -1) {
+                break;
             }
+
+            int dashboardChoice;
+
+            do {
+                displayDashboard(userIndex, users, graph);
+
+                cout << "\nWhat would you like to do?" << endl;
+                cout << "1. Add Friends" << endl;
+                cout << "2. Find Opportunities" << endl;
+                cout << "3. Logout" << endl;
+                cout << "Enter your choice: ";
+                cin >> dashboardChoice;
+
+                switch (dashboardChoice) {
+
+                case 1:
+                {
+                    char answer;
+
+                    cout << "\nDo you want to add friends? (y/n): ";
+                    cin >> answer;
+                    answer = tolower(answer);
+
+                    if (answer == 'y') {
+                        recommendAndAddFriend(
+                            userIndex,
+                            users,
+                            graph
+                        );
+                    }
+                    else {
+                        cout << "No friend recommendation requested.\n";
+                    }
+
+                    break;
+                }
+
+                case 2:
+                {
+                    char answer;
+
+                    cout << "\nDo you want to find opportunities? (y/n): ";
+                    cin >> answer;
+                    answer = tolower(answer);
+
+                    if (answer == 'y') {
+                        recommendAndChooseOpportunity(
+                            userIndex,
+                            users,
+                            opportunities
+                        );
+                    }
+                    else {
+                        cout << "No opportunity recommendation requested.\n";
+                    }
+
+                    break;
+                }
+
+                case 3:
+                    cout << "Logging out...\n";
+                    break;
+
+                default:
+                    cout << "Invalid choice!\n";
+                }
+
+            } while (dashboardChoice != 3);
 
             break;
         }
 
+        case 2:
+        {
+            User newUser;
 
-        case 11:
+            cout << "\n========== CREATE ACCOUNT ==========\n";
 
+            int newId = generateNextUserId(users);
+            newUser.createProfile(newId);
+
+            // The system automatically assigns a unique User ID.
+            cout << "\nAccount created successfully!\n";
+            cout << "Your User ID is: " << newId << endl;
+            cout << "Please remember this User ID for login.\n";
+
+            string newPassword;
+            cout << "Create a password: ";
+            cin >> newPassword;
+            passwords[newId] = newPassword;
+
+            users.push_back(newUser);
+            userMap[newUser.id] = users.size() - 1;
+            graph.push_back(vector<int>());
+
+            // Save the new account immediately.
             saveUsersToFile(users);
+            savePasswordsToFile(passwords);
 
+            cout << "Account created and saved successfully!\n";
+            break;
+        }
+
+        case 3:
+            for (int i = 0; i < users.size(); i++) {
+                users[i].displayProfile();
+            }
             break;
 
+        case 4:
+        {
+            Opportunity newOpportunity;
 
-        case 12:
+            cout << "\nEnter details for new opportunity:\n";
+            newOpportunity.createOpportunity();
 
+            opportunities.push_back(newOpportunity);
+            addOpportunityToTree(opportunityTree, newOpportunity);
+
+            cout << "New opportunity added successfully!\n";
+            break;
+        }
+
+        case 5:
+            saveUsersToFile(users);
+            break;
+
+        case 6:
             saveOpportunitiesToFile(opportunities);
-
             break;
 
-
-        case 13:
-
-            saveFriendshipsToFile(
-                graph,
-                users
-            );
-
+        case 7:
+            saveFriendshipsToFile(graph, users);
             break;
 
-
-        case 14:
-
+        case 9:
             cout << "Exiting program...\n";
-
             break;
-
 
         default:
-
             cout << "Invalid choice!\n";
         }
 
-    } while (choice != 14);
-
+    } while (choice != 8);
 
     return 0;
 }
