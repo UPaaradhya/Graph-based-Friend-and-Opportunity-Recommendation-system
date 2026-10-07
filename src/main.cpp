@@ -887,6 +887,30 @@ bool searchOpportunityInTree(
 
     return false;
 }
+// ================= DISPLAY OPPORTUNITY TREE =================
+
+void displayOpportunityTree(
+    OpportunityNode* root,
+    int level
+) {
+
+    for (int i = 0; i < level; i++) {
+
+        cout << "  ";
+    }
+
+    cout << "|-- " << root->category << endl;
+
+    for (int i = 0; i < root->children.size(); i++) {
+
+        displayOpportunityTree(
+            root->children[i],
+            level + 1
+        );
+    }
+}
+
+
 // ================= SAVE USERS =================
 
 void saveUsersToFile(vector<User>& users) {
@@ -1006,53 +1030,14 @@ void loadOpportunitiesFromFile(vector<Opportunity>& opportunities) {
 int main() {
 
     vector<User> users;
-loadUsersFromFile(users);
-
-
-    unordered_map<int, int> userMap;
-
-for (int i = 0; i < users.size(); i++) {
-    userMap[users[i].id] = i;
-}
-vector<vector<int>> graph(users.size());
-loadFriendshipsFromFile(graph, users, userMap);
-
-
-
-    vector<Opportunity> opportunities;
-loadOpportunitiesFromFile(opportunities);
-
-
-    // Create opportunity tree
-
-    OpportunityNode* opportunityTree =
-        new OpportunityNode("Opportunities");
-
-    OpportunityNode* projectNode =
-        new OpportunityNode("Project");
-
-    OpportunityNode* workshopNode =
-        new OpportunityNode("Workshop");
-
-    OpportunityNode* courseNode =
-        new OpportunityNode("Course");
-
-
-    opportunityTree->children.push_back(projectNode);
-
-    opportunityTree->children.push_back(workshopNode);
-
-    opportunityTree->children.push_back(courseNode);
-
+    loadUsersFromFile(users);
 
     // ================= CREATE USERS =================
 
     int numberOfUsers;
 
-    cout << "Enter number of users: ";
-
+    cout << "Enter number of new users: ";
     cin >> numberOfUsers;
-
 
     for (int i = 0; i < numberOfUsers; i++) {
 
@@ -1067,7 +1052,6 @@ loadOpportunitiesFromFile(opportunities);
         users.push_back(newUser);
     }
 
-
     // ================= HASH MAP =================
 
     unordered_map<int, int> userMap;
@@ -1077,20 +1061,51 @@ loadOpportunitiesFromFile(opportunities);
         userMap[users[i].id] = i;
     }
 
-
     // ================= GRAPH =================
 
     vector<vector<int>> graph(users.size());
 
+    // Load old friendships after users and userMap are ready
+    loadFriendshipsFromFile(graph, users, userMap);
 
-    // ================= CREATE OPPORTUNITIES =================
+    // ================= LOAD OPPORTUNITIES =================
+
+    vector<Opportunity> opportunities;
+    loadOpportunitiesFromFile(opportunities);
+
+    // ================= CREATE OPPORTUNITY TREE =================
+
+    OpportunityNode* opportunityTree =
+        new OpportunityNode("Opportunities");
+
+    OpportunityNode* projectNode =
+        new OpportunityNode("Project");
+
+    OpportunityNode* workshopNode =
+        new OpportunityNode("Workshop");
+
+    OpportunityNode* courseNode =
+        new OpportunityNode("Course");
+
+    opportunityTree->children.push_back(projectNode);
+    opportunityTree->children.push_back(workshopNode);
+    opportunityTree->children.push_back(courseNode);
+
+    // Add already saved opportunities to the tree
+    for (int i = 0; i < opportunities.size(); i++) {
+
+        addOpportunityToTree(
+            opportunityTree,
+            opportunities[i]
+        );
+    }
+
+    // ================= CREATE NEW OPPORTUNITIES =================
 
     int numberOfOpportunities;
 
-    cout << "\nEnter number of opportunities: ";
-
+    cout << "\nEnter number of new opportunities: ";
     cin >> numberOfOpportunities;
-
 
     for (int i = 0; i < numberOfOpportunities; i++) {
 
@@ -1110,7 +1125,6 @@ loadOpportunitiesFromFile(opportunities);
         );
     }
 
-
     // ================= MENU =================
 
     int choice;
@@ -1120,37 +1134,22 @@ loadOpportunitiesFromFile(opportunities);
         cout << "\n========== MENU ==========\n";
 
         cout << "1. Display All Users\n";
-
         cout << "2. Add Friendship\n";
-
         cout << "3. Display Friends\n";
-
         cout << "4. Friend Recommendation\n";
-
         cout << "5. DFS Network Traversal\n";
-
         cout << "6. Find Mutual Friends\n";
-
         cout << "7. Common Skills and Interests\n";
-
         cout << "8. Recommend Opportunities\n";
-
         cout << "9. Display Opportunity Tree\n";
-
         cout << "10. Search Opportunity\n";
-
         cout << "11. Save Users\n";
-
         cout << "12. Save Opportunities\n";
-        
-        cout<< "13. Save Friendships \n";
-
+        cout << "13. Save Friendships\n";
         cout << "14. Exit\n";
 
         cout << "Enter your choice: ";
-
         cin >> choice;
-
 
         switch (choice) {
 
@@ -1233,7 +1232,8 @@ loadOpportunitiesFromFile(opportunities);
 
             recommendOpportunities(
                 users,
-                opportunities, userMap
+                opportunities,
+                userMap
             );
 
             break;
@@ -1254,13 +1254,15 @@ loadOpportunitiesFromFile(opportunities);
             string name;
 
             cout << "Enter Opportunity Name: ";
-
             cin >> name;
 
-if (!searchOpportunityInTree(opportunityTree, name)) {
+            if (!searchOpportunityInTree(
+                    opportunityTree,
+                    name
+                )) {
 
-    cout << "Opportunity not found.\n";
-}
+                cout << "Opportunity not found.\n";
+            }
 
             break;
         }
@@ -1279,9 +1281,16 @@ if (!searchOpportunityInTree(opportunityTree, name)) {
 
             break;
 
+
         case 13:
-            saveFriendshipsToFile(graph, users);
-            break:
+
+            saveFriendshipsToFile(
+                graph,
+                users
+            );
+
+            break;
+
 
         case 14:
 
@@ -1295,7 +1304,8 @@ if (!searchOpportunityInTree(opportunityTree, name)) {
             cout << "Invalid choice!\n";
         }
 
-    } while (choice != 13);
+    } while (choice != 14);
 
 
     return 0;
+}
