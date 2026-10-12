@@ -1,5 +1,7 @@
 #include "Neo4jDatabase.h"
-#include <curl/curl.h>
+#include <windows.h>
+#include <winhttp.h>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include <cstdio>
@@ -7,15 +9,6 @@
 
 using namespace std;
 using boost::property_tree::ptree;
-
-// libcurl calls this function when the server sends a response.
-static size_t receiveResponse(char* data, size_t size, size_t count, void* userData)
-{
-    string* response = static_cast<string*>(userData);
-    size_t length = size * count;
-    response->append(data, length);
-    return length;
-}
 
 // Escapes special characters in a Cypher query before adding it to JSON.
 static string escapeJson(const string& text)
@@ -115,71 +108,53 @@ bool Neo4jDatabase::connect()
     return !response.empty();
 }
 
-// Sends one HTTP request to Neo4j and returns its response.
+// Uses Windows' built-in WinHTTP API, so no libcurl installation is needed.
+static std::wstring toWide(const std::string& value)
+{
+    if (value.empty()) return L"";
+    int size = MultiByteToWideChar(CP_UTF8, 0, value.c_str(), -1, NULL, 0);
+    std::wstring result(size, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, value.c_str(), -1, &result[0], size);
+    if (!result.empty()) result.pop_back();
+    return result;
+}
+
+static std::string base64Encode(const std::string& input)
+{
+    const char* table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string out; unsigned int val=0; int bits=-6;
+    for (unsigned char c : input) { val=(val<<8)+c; bits+=8; while(bits>=0){out.push_back(table[(val>>bits)&0x3F]);bits-=6;} }
+    if(bits>-6) out.push_back(table[((val<<8)>>(bits+8))&0x3F]);
+    while(out.size()%4) out.push_back('=');
+    return out;
+}
+
 string Neo4jDatabase::request(const string& body)
 {
-    CURL* curl = curl_easy_init();
-
-    if (curl == NULL)
-    {
-        error = "Could not start the HTTP connection.";
-        return "";
-    }
-
-    string response;
-    struct curl_slist* headers = NULL;
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-
-    curl_easy_setopt(curl, CURLOPT_URL, uri.c_str());
-    curl_easy_setopt(curl, CURLOPT_USERNAME, username.c_str());
-    curl_easy_setopt(curl, CURLOPT_PASSWORD, password.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-    curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, receiveResponse);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 20L);
-
-    CURLcode result = curl_easy_perform(curl);
-    long statusCode = 0;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &statusCode);
-
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-
-    if (result != CURLE_OK)
-    {
-        error = curl_easy_strerror(result);
-        return "";
-    }
-
-    if (statusCode < 200 || statusCode >= 300)
-    {
-        error = "HTTP status " + to_string(statusCode) + ": " + response;
-        return "";
-    }
-
-    // Neo4j can return query errors inside an otherwise successful HTTP response.
-    try
-    {
-        stringstream input(response);
-        ptree root;
-        boost::property_tree::read_json(input, root);
-
-        boost::optional<ptree&> errors = root.get_child_optional("errors");
-        if (errors && !errors->empty())
-        {
-            error = errors->front().second.get<string>("message", "Neo4j query error");
-            return "";
-        }
-    }
-    catch (const exception& problem)
-    {
-        error = string("Could not read Neo4j response: ") + problem.what();
-        return "";
-    }
-
+    URL_COMPONENTS parts{};
+    parts.dwStructSize = sizeof(parts);
+    parts.dwSchemeLength = parts.dwHostNameLength = parts.dwUrlPathLength = parts.dwExtraInfoLength = (DWORD)-1;
+    std::wstring wideUri = toWide(uri);
+    if (!WinHttpCrackUrl(wideUri.c_str(), 0, 0, &parts)) { error = "Invalid Neo4j URL."; return ""; }
+    std::wstring host(parts.lpszHostName, parts.dwHostNameLength);
+    std::wstring path(parts.lpszUrlPath, parts.dwUrlPathLength);
+    if (parts.dwExtraInfoLength) path += std::wstring(parts.lpszExtraInfo, parts.dwExtraInfoLength);
+    HINTERNET session = WinHttpOpen(L"FriendOpportunitySystem/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+    if (!session) { error = "Could not start Windows HTTP connection."; return ""; }
+    HINTERNET connection = WinHttpConnect(session, host.c_str(), parts.nPort, 0);
+    HINTERNET requestHandle = connection ? WinHttpOpenRequest(connection, L"POST", path.c_str(), NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, parts.nScheme == INTERNET_SCHEME_HTTPS ? WINHTTP_FLAG_SECURE : 0) : NULL;
+    if (!requestHandle) { error = "Could not open a connection to Neo4j. Check that Neo4j is running."; if(connection)WinHttpCloseHandle(connection);WinHttpCloseHandle(session);return ""; }
+    std::string auth = "Authorization: Basic " + base64Encode(username + ":" + password);
+    std::wstring headers = L"Content-Type: application/json\r\n" + toWide(auth) + L"\r\n";
+    BOOL sent = WinHttpSendRequest(requestHandle, headers.c_str(), (DWORD)-1, (LPVOID)body.data(), (DWORD)body.size(), (DWORD)body.size(), 0);
+    if (!sent || !WinHttpReceiveResponse(requestHandle, NULL)) { error = "Could not receive a response from Neo4j. Check the URL and database status."; WinHttpCloseHandle(requestHandle);WinHttpCloseHandle(connection);WinHttpCloseHandle(session);return ""; }
+    DWORD status=0, statusSize=sizeof(status); WinHttpQueryHeaders(requestHandle, WINHTTP_QUERY_STATUS_CODE|WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_HEADER_NAME_BY_INDEX, &status, &statusSize, WINHTTP_NO_HEADER_INDEX);
+    std::string response; DWORD available=0;
+    do { available=0; if(!WinHttpQueryDataAvailable(requestHandle,&available))break; if(available){std::vector<char> buffer(available);DWORD read=0;if(WinHttpReadData(requestHandle,buffer.data(),available,&read))response.append(buffer.data(),read);else break;} } while(available>0);
+    WinHttpCloseHandle(requestHandle);WinHttpCloseHandle(connection);WinHttpCloseHandle(session);
+    if(status<200||status>=300){error="HTTP status "+std::to_string(status)+": "+response;return "";}
+    try { std::stringstream input(response); ptree root; boost::property_tree::read_json(input,root); auto errors=root.get_child_optional("errors"); if(errors && !errors.get().empty()){error=errors.get().front().second.get<std::string>("message", "Neo4j query error");return "";} }
+    catch(const std::exception& problem){error=std::string("Could not read Neo4j response: ")+problem.what();return "";}
     return response;
 }
 

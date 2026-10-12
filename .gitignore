@@ -1,2 +1,5 @@
+friend_opportunity.exe
+*.o
 build/
 config/neo4j.conf
+.vscode/.browse.VC.db

@@ -1,0 +1,30 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Friend Opportunity System",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-std=c++17",
+                "-Isrc",
+                "src/main.cpp",
+                "src/Neo4jDatabase.cpp",
+                "src/UserService.cpp",
+                "src/GraphManager.cpp",
+                "src/RecommendationService.cpp",
+                "src/OpportunityService.cpp",
+                "-lwinhttp",
+                "-o",
+                "friend_opportunity.exe"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
