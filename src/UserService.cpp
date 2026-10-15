@@ -74,10 +74,10 @@ static vector<string> splitValues(const string& text)
 }
 
 // Converts one database row into a User object.
-static User readUser(const boost::property_tree::ptree& row)
+static User readUser(const simple_json::ptree& row)
 {
     User user;
-    boost::property_tree::ptree::const_iterator item = row.begin();
+    simple_json::ptree::const_iterator item = row.begin();
 
     if (item == row.end())
     {
@@ -122,7 +122,7 @@ static User readUser(const boost::property_tree::ptree& row)
 vector<User> UserService::allUsers()
 {
     vector<User> users;
-    vector<boost::property_tree::ptree> rows;
+    vector<simple_json::ptree> rows;
 
     rows = db.query(
         "MATCH (u:User) "
@@ -138,7 +138,7 @@ vector<User> UserService::allUsers()
 
 bool UserService::getUser(int id, User& user)
 {
-    vector<boost::property_tree::ptree> rows;
+    vector<simple_json::ptree> rows;
     rows = db.query(
         "MATCH (u:User {id:$id}) "
         "RETURN u.id,u.name,u.course,u.password,u.skills,u.interests",
@@ -206,7 +206,7 @@ bool UserService::createAccount()
         interests.push_back(interest);
     }
 
-    vector<boost::property_tree::ptree> idRows;
+    vector<simple_json::ptree> idRows;
     idRows = db.query("MATCH (u:User) RETURN coalesce(max(u.id),99)+1");
 
     int nextId = 100;

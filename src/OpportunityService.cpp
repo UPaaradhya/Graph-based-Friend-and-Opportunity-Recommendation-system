@@ -28,7 +28,7 @@ static string escapeText(const string& text)
 vector<Opportunity> OpportunityService::all()
 {
     vector<Opportunity> opportunities;
-    vector<boost::property_tree::ptree> rows;
+    vector<simple_json::ptree> rows;
 
     rows = db.query(
         "MATCH (o:Opportunity) "
@@ -37,7 +37,7 @@ vector<Opportunity> OpportunityService::all()
     for (int i = 0; i < (int)rows.size(); i++)
     {
         Opportunity opportunity;
-        boost::property_tree::ptree::const_iterator item = rows[i].begin();
+        simple_json::ptree::const_iterator item = rows[i].begin();
 
         if (item == rows[i].end())
         {
@@ -101,7 +101,7 @@ bool OpportunityService::addOpportunity()
     cout << "Interest area: ";
     cin >> interest;
 
-    vector<boost::property_tree::ptree> idRows;
+    vector<simple_json::ptree> idRows;
     idRows = db.query(
         "MATCH (o:Opportunity) RETURN coalesce(max(o.id),0)+1");
 

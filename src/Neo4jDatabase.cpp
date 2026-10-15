@@ -5,10 +5,10 @@
 #include <fstream>
 #include <sstream>
 #include <cstdio>
-#include <boost/property_tree/json_parser.hpp>
+#include <simple_json/json_parser.hpp>
 
 using namespace std;
-using boost::property_tree::ptree;
+using simple_json::ptree;
 
 // Escapes special characters in a Cypher query before adding it to JSON.
 static string escapeJson(const string& text)
@@ -153,7 +153,7 @@ string Neo4jDatabase::request(const string& body)
     do { available=0; if(!WinHttpQueryDataAvailable(requestHandle,&available))break; if(available){std::vector<char> buffer(available);DWORD read=0;if(WinHttpReadData(requestHandle,buffer.data(),available,&read))response.append(buffer.data(),read);else break;} } while(available>0);
     WinHttpCloseHandle(requestHandle);WinHttpCloseHandle(connection);WinHttpCloseHandle(session);
     if(status<200||status>=300){error="HTTP status "+std::to_string(status)+": "+response;return "";}
-    try { std::stringstream input(response); ptree root; boost::property_tree::read_json(input,root); auto errors=root.get_child_optional("errors"); if(errors && !errors.get().empty()){error=errors.get().front().second.get<std::string>("message", "Neo4j query error");return "";} }
+    try { std::stringstream input(response); ptree root; simple_json::read_json(input,root); auto errors=root.get_child_optional("errors"); if(errors && !errors.get().empty()){error=errors.get().front().second.get<std::string>("message", "Neo4j query error");return "";} }
     catch(const std::exception& problem){error=std::string("Could not read Neo4j response: ")+problem.what();return "";}
     return response;
 }
@@ -185,7 +185,7 @@ vector<ptree> Neo4jDatabase::query(const string& cypher, const string& parameter
     {
         stringstream input(response);
         ptree root;
-        boost::property_tree::read_json(input, root);
+        simple_json::read_json(input, root);
 
         ptree& results = root.get_child("results");
         for (ptree::iterator result = results.begin(); result != results.end(); result++)
@@ -194,7 +194,7 @@ vector<ptree> Neo4jDatabase::query(const string& cypher, const string& parameter
 
             for (ptree::iterator row = dataRows.begin(); row != dataRows.end(); row++)
             {
-                boost::optional<ptree&> values = row->second.get_child_optional("row");
+                simple_json::optional<ptree&> values = row->second.get_child_optional("row");
                 if (values)
                 {
                     rows.push_back(values.get());

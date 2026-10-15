@@ -34,10 +34,10 @@ static vector<string> splitValues(const string& text)
 }
 
 // Converts one row from Neo4j into a User object.
-static User readUser(const boost::property_tree::ptree& row)
+static User readUser(const simple_json::ptree& row)
 {
     User user;
-    boost::property_tree::ptree::const_iterator item = row.begin();
+    simple_json::ptree::const_iterator item = row.begin();
 
     if (item == row.end())
     {
@@ -75,7 +75,7 @@ static User readUser(const boost::property_tree::ptree& row)
 
 bool GraphManager::areFriends(int id1, int id2)
 {
-    vector<boost::property_tree::ptree> rows;
+    vector<simple_json::ptree> rows;
     rows = db.query(
         "MATCH (:User {id:$a})-[:FRIENDS_WITH]-(:User {id:$b}) RETURN 1",
         "{\"a\":" + to_string(id1) + ",\"b\":" + to_string(id2) + "}");
@@ -90,7 +90,7 @@ bool GraphManager::addFriendship(int id1, int id2)
         return false;
     }
 
-    vector<boost::property_tree::ptree> users;
+    vector<simple_json::ptree> users;
     users = db.query(
         "MATCH (a:User {id:$a}),(b:User {id:$b}) RETURN a.id,b.id",
         "{\"a\":" + to_string(id1) + ",\"b\":" + to_string(id2) + "}");
@@ -114,7 +114,7 @@ bool GraphManager::addFriendship(int id1, int id2)
 vector<User> GraphManager::friendsOf(int id)
 {
     vector<User> friends;
-    vector<boost::property_tree::ptree> rows;
+    vector<simple_json::ptree> rows;
 
     rows = db.query(
         "MATCH (u:User {id:$id})-[:FRIENDS_WITH]-(f:User) "
@@ -132,7 +132,7 @@ vector<User> GraphManager::friendsOf(int id)
 vector<User> GraphManager::mutualFriends(int id1, int id2)
 {
     vector<User> friends;
-    vector<boost::property_tree::ptree> rows;
+    vector<simple_json::ptree> rows;
 
     rows = db.query(
         "MATCH (:User {id:$a})-[:FRIENDS_WITH]-(f:User)"

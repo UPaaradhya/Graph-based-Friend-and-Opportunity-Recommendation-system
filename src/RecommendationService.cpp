@@ -48,10 +48,10 @@ static bool containsValue(const vector<string>& values, const string& wanted)
 }
 
 // Reads a user returned by a Neo4j query.
-static User readUser(const boost::property_tree::ptree& row)
+static User readUser(const simple_json::ptree& row)
 {
     User user;
-    boost::property_tree::ptree::const_iterator item = row.begin();
+    simple_json::ptree::const_iterator item = row.begin();
 
     if (item == row.end())
     {
@@ -89,7 +89,7 @@ static User readUser(const boost::property_tree::ptree& row)
 
 void RecommendationService::recommendFriends(int userId)
 {
-    vector<boost::property_tree::ptree> myRows;
+    vector<simple_json::ptree> myRows;
     myRows = db.query(
         "MATCH (u:User {id:$id}) RETURN u.id,u.name,u.course,u.skills,u.interests",
         "{\"id\":" + to_string(userId) + "}");
@@ -102,7 +102,7 @@ void RecommendationService::recommendFriends(int userId)
 
     User currentUser = readUser(myRows[0]);
 
-    vector<boost::property_tree::ptree> rows;
+    vector<simple_json::ptree> rows;
     rows = db.query(
         "MATCH (u:User) WHERE u.id <> $id "
         "AND NOT EXISTS { MATCH (:User {id:$id})-[:FRIENDS_WITH]-(u) } "
@@ -214,7 +214,7 @@ void RecommendationService::recommendFriends(int userId)
 
 void RecommendationService::recommendOpportunities(int userId)
 {
-    vector<boost::property_tree::ptree> userRows;
+    vector<simple_json::ptree> userRows;
     userRows = db.query(
         "MATCH (u:User {id:$id}) RETURN u.skills,u.interests",
         "{\"id\":" + to_string(userId) + "}");
@@ -227,7 +227,7 @@ void RecommendationService::recommendOpportunities(int userId)
 
     vector<string> userSkills;
     vector<string> userInterests;
-    boost::property_tree::ptree::const_iterator item = userRows[0].begin();
+    simple_json::ptree::const_iterator item = userRows[0].begin();
 
     if (item != userRows[0].end())
     {

@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <boost/property_tree/ptree.hpp>
+#include <simple_json/ptree.hpp>
 
 class Neo4jDatabase
 {
@@ -12,7 +12,7 @@ public:
     bool connect();
     bool initialize();
     bool execute(const std::string& cypher, const std::string& parameters = "{}");
-    std::vector<boost::property_tree::ptree> query(
+    std::vector<simple_json::ptree> query(
         const std::string& cypher,
         const std::string& parameters = "{}");
 
