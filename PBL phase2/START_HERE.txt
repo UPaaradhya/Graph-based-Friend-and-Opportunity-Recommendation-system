@@ -1,0 +1,25 @@
+GRAPH BASED FRIEND AND OPPORTUNITY RECOMMENDATION SYSTEM  (Neo4j + C++)
+=======================================================================
+
+STEPS (double-click each file, in this order):
+
+ 0. Open Neo4j Desktop and make sure your database says RUNNING.
+ 1. Double-click  1_build.bat      -> makes app.exe and load.exe
+ 2. Double-click  2_load_data.bat  -> puts 100 users into Neo4j (first time only)
+ 3. Double-click  3_run_app.bat    -> starts the program
+
+LOGIN TEST:   User ID 1     Password ehn#$QJ2ay
+All user passwords are in user_credentials_100.csv
+
+IF YOU PREFER THE TERMINAL (VS Code):
+   g++ -std=c++17 MainModule.cpp -o app.exe -lcurl
+   .\app.exe
+Compile MainModule.cpp ONLY. Never compile the other .cpp files separately.
+
+YOUR NEO4J PASSWORD is written in two places. If you change it, change both:
+   neo4j_storage.h   (line with  inline Neo4jClient db(...) )
+   2_load_data.bat
+
+BEFORE PUSHING TO GITHUB:
+   - put YOUR_PASSWORD_HERE in neo4j_storage.h and 2_load_data.bat
+   - do NOT upload user_credentials_100.csv, app.exe, load.exe
