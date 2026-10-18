@@ -1,6 +1,0 @@
-# Copy this file to config/neo4j.conf and update the password.
-# Neo4j HTTP transactional endpoint (Neo4j 4/5):
-uri=http://localhost:7474/db/neo4j/tx/commit
-username=neo4j
-password=CHANGE_ME
-database=neo4j
