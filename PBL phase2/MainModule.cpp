@@ -1,5 +1,3 @@
-// Main entry point. This file includes the other .cpp modules in dependency order.
-// IMPORTANT: Compile MainModule.cpp only; do not compile the included .cpp files separately.
 #include "UserModule.cpp"
 #include "RecommendationTypes.cpp"
 #include "FriendshipModule.cpp"
